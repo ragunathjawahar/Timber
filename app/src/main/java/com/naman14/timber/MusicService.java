@@ -768,7 +768,7 @@ public class MusicService extends Service {
                 }
             }
             if (gotonext) {
-                if (playlist.getTracks().size() == 0) {
+                if (playlist.isEmpty()) {
                     stop(true);
                     mPlayPos = -1;
                     closeCursor();
@@ -810,7 +810,7 @@ public class MusicService extends Service {
 
         playlist.getTracks().addAll(position, arrayList);
 
-        if (playlist.getTracks().size() == 0) {
+        if (playlist.isEmpty()) {
             closeCursor();
             notifyChange(META_CHANGED);
         }
@@ -880,7 +880,7 @@ public class MusicService extends Service {
         synchronized (this) {
             closeCursor();
 
-            if (playlist.getTracks().size() == 0) {
+            if (playlist.isEmpty()) {
                 return;
             }
             stop(false);
@@ -2870,6 +2870,10 @@ public class MusicService extends Service {
 
         public void setTracks(ArrayList<MusicPlaybackTrack> tracks) {
             this.tracks = tracks;
+        }
+
+        public boolean isEmpty() {
+            return tracks.size() == 0;
         }
     }
 }

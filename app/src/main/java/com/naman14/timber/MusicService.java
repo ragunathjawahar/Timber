@@ -268,7 +268,7 @@ public class MusicService extends Service {
 
             return true;
 
-        } else if (playlist.getTracks().size() > 0 || mPlayerHandler.hasMessages(TRACK_ENDED)) {
+        } else if (playlist.isNotEmpty() || mPlayerHandler.hasMessages(TRACK_ENDED)) {
             scheduleDelayedShutdown();
             return true;
         }
@@ -1393,7 +1393,7 @@ public class MusicService extends Service {
         if (id == mCardId) {
             playlist.setTracks(mPlaybackStateStore.getQueue());
         }
-        if (playlist.getTracks().size() > 0) {
+        if (playlist.isNotEmpty()) {
             final int pos = mPreferences.getInt("curpos", 0);
             if (pos < 0 || pos >= playlist.getTracks().size()) {
                 playlist.getTracks().clear();
@@ -1580,7 +1580,7 @@ public class MusicService extends Service {
 
     public void setShuffleMode(final int shufflemode) {
         synchronized (this) {
-            if (mShuffleMode == shufflemode && playlist.getTracks().size() > 0) {
+            if (mShuffleMode == shufflemode && playlist.isNotEmpty()) {
                 return;
             }
 
@@ -2874,6 +2874,10 @@ public class MusicService extends Service {
 
         public boolean isEmpty() {
             return tracks.size() == 0;
+        }
+
+        public boolean isNotEmpty() {
+            return tracks.size() > 0;
         }
     }
 }

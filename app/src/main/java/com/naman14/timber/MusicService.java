@@ -1496,8 +1496,9 @@ public class MusicService extends Service {
                 try {
                     if (mCursor != null && shouldAddToPlaylist) {
                         playlist.clear();
-                        playlist.getTracks().add(new MusicPlaybackTrack(
-                                mCursor.getLong(IDCOLIDX), -1, TimberUtils.IdType.NA, -1));
+                        MusicPlaybackTrack track = new MusicPlaybackTrack(
+                                mCursor.getLong(IDCOLIDX), -1, IdType.NA, -1);
+                        playlist.getTracks().add(track);
                         notifyChange(QUEUE_CHANGED);
                         mPlayPos = 0;
                         mHistory.clear();

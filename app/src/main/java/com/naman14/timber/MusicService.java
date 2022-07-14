@@ -1391,7 +1391,7 @@ public class MusicService extends Service {
             id = mPreferences.getInt("cardid", ~mCardId);
         }
         if (id == mCardId) {
-            setPlaylist(mPlaybackStateStore.getQueue());
+            playlist.setTracks(mPlaybackStateStore.getQueue());
         }
         if (getPlaylist().size() > 0) {
             final int pos = mPreferences.getInt("curpos", 0);
@@ -2237,10 +2237,6 @@ public class MusicService extends Service {
 
     public ArrayList<MusicPlaybackTrack> getPlaylist() {
         return playlist.getTracks();
-    }
-
-    public void setPlaylist(ArrayList<MusicPlaybackTrack> tracks) {
-        playlist.setTracks(tracks);
     }
 
     public interface TrackErrorExtra {

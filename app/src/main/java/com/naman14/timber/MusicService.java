@@ -218,7 +218,7 @@ public class MusicService extends Service {
 
     private int mServiceStartId = -1;
 
-    private ArrayList<MusicPlaybackTrack> mPlaylist = new ArrayList<MusicPlaybackTrack>(100);
+    private ArrayList<MusicPlaybackTrack> mPlaylist = new ArrayList<>(100);
 
     private long[] mAutoShuffleList = null;
 

@@ -750,7 +750,7 @@ public class MusicService extends Service {
             if (first == 0 && last == playlist.getTracks().size() - 1) {
                 mPlayPos = -1;
                 mNextPlayPos = -1;
-                playlist.getTracks().clear();
+                playlist.clear();
                 mHistory.clear();
             } else {
                 for (int i = 0; i < numToRemove; i++) {
@@ -794,7 +794,7 @@ public class MusicService extends Service {
     private void addToPlayList(final long[] list, int position, long sourceId, TimberUtils.IdType sourceType) {
         final int addlen = list.length;
         if (position < 0) {
-            playlist.getTracks().clear();
+            playlist.clear();
             position = 0;
         }
 
@@ -1396,7 +1396,7 @@ public class MusicService extends Service {
         if (playlist.isNotEmpty()) {
             final int pos = mPreferences.getInt("curpos", 0);
             if (pos < 0 || pos >= playlist.getTracks().size()) {
-                playlist.getTracks().clear();
+                playlist.clear();
                 return;
             }
             mPlayPos = pos;
@@ -1411,7 +1411,7 @@ public class MusicService extends Service {
                 openCurrentAndNext();
             }
             if (!mPlayer.isInitialized()) {
-                playlist.getTracks().clear();
+                playlist.clear();
                 return;
             }
 
@@ -1494,7 +1494,7 @@ public class MusicService extends Service {
                 }
                 try {
                     if (mCursor != null && shouldAddToPlaylist) {
-                        playlist.getTracks().clear();
+                        playlist.clear();
                         playlist.getTracks().add(new MusicPlaybackTrack(
                                 mCursor.getLong(IDCOLIDX), -1, TimberUtils.IdType.NA, -1));
                         notifyChange(QUEUE_CHANGED);
@@ -1587,7 +1587,7 @@ public class MusicService extends Service {
             mShuffleMode = shufflemode;
             if (mShuffleMode == SHUFFLE_AUTO) {
                 if (makeAutoShuffleList()) {
-                    playlist.getTracks().clear();
+                    playlist.clear();
                     doAutoShuffleUpdate();
                     mPlayPos = 0;
                     openCurrentAndNext();
@@ -2878,6 +2878,10 @@ public class MusicService extends Service {
 
         public boolean isNotEmpty() {
             return tracks.size() > 0;
+        }
+
+        public void clear() {
+            tracks.clear();
         }
     }
 }

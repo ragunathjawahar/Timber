@@ -218,7 +218,7 @@ public class MusicService extends Service {
 
     private int mServiceStartId = -1;
 
-    private ArrayList<MusicPlaybackTrack> mPlaylist = new ArrayList<>(100);
+    private final Playlist playlist = new Playlist();
 
     private long[] mAutoShuffleList = null;
 
@@ -2236,11 +2236,11 @@ public class MusicService extends Service {
     }
 
     public ArrayList<MusicPlaybackTrack> getPlaylist() {
-        return mPlaylist;
+        return playlist.getTracks();
     }
 
     public void setPlaylist(ArrayList<MusicPlaybackTrack> tracks) {
-        this.mPlaylist = tracks;
+        playlist.setTracks(tracks);
     }
 
     public interface TrackErrorExtra {
@@ -2866,6 +2866,18 @@ public class MusicService extends Service {
 
             Log.e("ELEVEN", "calling refresh!");
             refresh();
+        }
+    }
+
+    static class Playlist {
+        private ArrayList<MusicPlaybackTrack> tracks = new ArrayList<>(100);
+
+        public ArrayList<MusicPlaybackTrack> getTracks() {
+            return tracks;
+        }
+
+        public void setTracks(ArrayList<MusicPlaybackTrack> tracks) {
+            this.tracks = tracks;
         }
     }
 }

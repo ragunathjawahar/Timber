@@ -887,7 +887,7 @@ public class MusicService extends Service {
 
             boolean shutdown = false;
 
-            updateCursor(playlist.getTracks().get(mPlayPos).mId);
+            updateCursor(playlist.getTrackId(mPlayPos));
             while (true) {
                 if (mCursor != null
                         && openFile(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/"
@@ -905,7 +905,7 @@ public class MusicService extends Service {
                     mPlayPos = pos;
                     stop(false);
                     mPlayPos = pos;
-                    updateCursor(playlist.getTracks().get(mPlayPos).mId);
+                    updateCursor(playlist.getTrackId(mPlayPos));
                 } else {
                     mOpenFailedCounter = 0;
                     Log.w(TAG, "Failed to open file for playback");
@@ -1020,7 +1020,7 @@ public class MusicService extends Service {
         mNextPlayPos = position;
         if (D) Log.d(TAG, "setNextTrack: next play position = " + mNextPlayPos);
         if (mNextPlayPos >= 0 && playlist.getTracks() != null && mNextPlayPos < playlist.size()) {
-            final long id = playlist.getTracks().get(mNextPlayPos).mId;
+            final long id = playlist.getTrackId(mNextPlayPos);
             mPlayer.setNextDataSource(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/" + id);
         } else {
             mPlayer.setNextDataSource(null);
@@ -1321,8 +1321,8 @@ public class MusicService extends Service {
             StringBuilder selection = new StringBuilder();
             StringBuilder order = new StringBuilder().append("CASE _id \n");
             for (int i = 0; i < playlist.size(); i++) {
-                selection.append("_id=").append(playlist.getTracks().get(i).mId).append(" OR ");
-                order.append("WHEN ").append(playlist.getTracks().get(i).mId).append(" THEN ").append(i).append("\n");
+                selection.append("_id=").append(playlist.getTrackId(i)).append(" OR ");
+                order.append("WHEN ").append(playlist.getTrackId(i)).append(" THEN ").append(i).append("\n");
             }
             order.append("END");
             Cursor c = getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, NOTIFICATION_PROJECTION, selection.substring(0, selection.length() - 3), null, order.toString());
@@ -1400,10 +1400,10 @@ public class MusicService extends Service {
                 return;
             }
             mPlayPos = pos;
-            updateCursor(playlist.getTracks().get(mPlayPos).mId);
+            updateCursor(playlist.getTrackId(mPlayPos));
             if (mCursor == null) {
                 SystemClock.sleep(3000);
-                updateCursor(playlist.getTracks().get(mPlayPos).mId);
+                updateCursor(playlist.getTrackId(mPlayPos));
             }
             synchronized (this) {
                 closeCursor();
@@ -1622,7 +1622,7 @@ public class MusicService extends Service {
         int numremoved = 0;
         synchronized (this) {
             for (int i = 0; i < playlist.size(); i++) {
-                if (playlist.getTracks().get(i).mId == id) {
+                if (playlist.getTrackId(i) == id) {
                     numremoved += removeTracksInternal(i, i);
                     i--;
                 }
@@ -1638,7 +1638,7 @@ public class MusicService extends Service {
         synchronized (this) {
             if (position >= 0 &&
                     position < playlist.size() &&
-                    playlist.getTracks().get(position).mId == id) {
+                    playlist.getTrackId(position) == id) {
 
                 return removeTracks(position, position) > 0;
             }
@@ -1734,7 +1734,7 @@ public class MusicService extends Service {
             }
             String[] genreProjection = {MediaStore.Audio.Genres.NAME};
             Uri genreUri = MediaStore.Audio.Genres.getContentUriForAudioId("external",
-                    (int) playlist.getTracks().get(mPlayPos).mId);
+                    (int) playlist.getTrackId(mPlayPos));
             Cursor genreCursor = getContentResolver().query(genreUri, genreProjection,
                     null, null, null);
             if (genreCursor != null) {
@@ -1811,7 +1811,7 @@ public class MusicService extends Service {
     public long getNextAudioId() {
         synchronized (this) {
             if (mNextPlayPos >= 0 && mNextPlayPos < playlist.size() && mPlayer.isInitialized()) {
-                return playlist.getTracks().get(mNextPlayPos).mId;
+                return playlist.getTrackId(mNextPlayPos);
             }
         }
         return -1;
@@ -1822,7 +1822,7 @@ public class MusicService extends Service {
             if (mPlayer.isInitialized()) {
                 int pos = getPreviousPlayPosition(false);
                 if (pos >= 0 && pos < playlist.size()) {
-                    return playlist.getTracks().get(pos).mId;
+                    return playlist.getTrackId(pos);
                 }
             }
         }
@@ -1882,7 +1882,7 @@ public class MusicService extends Service {
             final int len = playlist.size();
             final long[] list = new long[len];
             for (int i = 0; i < len; i++) {
-                list[i] = playlist.getTracks().get(i).mId;
+                list[i] = playlist.getTrackId(i);
             }
             return list;
         }
@@ -1891,7 +1891,7 @@ public class MusicService extends Service {
     public long getQueueItemAtPosition(int position) {
         synchronized (this) {
             if (position >= 0 && position < playlist.size()) {
-                return playlist.getTracks().get(position).mId;
+                return playlist.getTrackId(position);
             }
         }
 
@@ -1939,7 +1939,7 @@ public class MusicService extends Service {
             if (playlist.size() == listlength) {
                 newlist = false;
                 for (int i = 0; i < listlength; i++) {
-                    if (list[i] != playlist.getTracks().get(i).mId) {
+                    if (list[i] != playlist.getTrackId(i)) {
                         newlist = true;
                         break;
                     }
@@ -2297,7 +2297,7 @@ public class MusicService extends Service {
                             service.mCursor.close();
                             service.mCursor = null;
                         }
-                        service.updateCursor(service.playlist.getTracks().get(service.mPlayPos).mId);
+                        service.updateCursor(service.playlist.getTrackId(service.mPlayPos));
                         service.notifyChange(META_CHANGED);
                         service.updateNotification();
                         break;
@@ -2886,6 +2886,10 @@ public class MusicService extends Service {
 
         public int size() {
             return tracks.size();
+        }
+
+        public long getTrackId(int index) {
+            return tracks.get(index).mId;
         }
     }
 }

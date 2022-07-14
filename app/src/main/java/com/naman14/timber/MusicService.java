@@ -1019,7 +1019,7 @@ public class MusicService extends Service {
     private void setNextTrack(int position) {
         mNextPlayPos = position;
         if (D) Log.d(TAG, "setNextTrack: next play position = " + mNextPlayPos);
-        if (mNextPlayPos >= 0 && playlist.getTracks() != null && mNextPlayPos < playlist.size()) {
+        if (mNextPlayPos >= 0 && playlist.isNotEmpty() && mNextPlayPos < playlist.size()) {
             final long id = playlist.getTrackId(mNextPlayPos);
             mPlayer.setNextDataSource(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/" + id);
         } else {

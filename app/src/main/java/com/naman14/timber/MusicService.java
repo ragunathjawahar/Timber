@@ -933,7 +933,7 @@ public class MusicService extends Service {
     }
 
     private int getNextPosition(final boolean force) {
-        if (playlist.getTracks() == null || playlist.getTracks().isEmpty()) {
+        if (playlist.getTracks() == null || playlist.isEmpty()) {
             return -1;
         }
         if (!force && mRepeatMode == REPEAT_CURRENT) {

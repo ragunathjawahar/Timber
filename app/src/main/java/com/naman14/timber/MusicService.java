@@ -242,10 +242,7 @@ public class MusicService extends Service {
         @Override
         public void onReceive(final Context context, final Intent intent) {
             final String command = intent.getStringExtra(CMDNAME);
-
-
             handleCommandIntent(intent);
-
         }
     };
     private ContentObserver mMediaStoreObserver;
@@ -265,9 +262,7 @@ public class MusicService extends Service {
         saveQueue(true);
 
         if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus) {
-
             return true;
-
         } else if (playlist.isNotEmpty() || mPlayerHandler.hasMessages(TRACK_ENDED)) {
             scheduleDelayedShutdown();
             return true;
@@ -1473,7 +1468,6 @@ public class MusicService extends Service {
                     updateCursor(id);
 
                 } else if (path.startsWith("content://downloads/")) {
-
                     String mpUri = getValueForDownloadedFile(this, uri, "mediaprovider_uri");
                     if (D) Log.i(TAG, "Downloaded file's MP uri : " + mpUri);
                     if (!TextUtils.isEmpty(mpUri)) {
@@ -1547,7 +1541,6 @@ public class MusicService extends Service {
     }
 
     private String getValueForDownloadedFile(Context context, Uri uri, String column) {
-
         Cursor cursor = null;
         final String[] projection = {
                 column
@@ -2089,7 +2082,6 @@ public class MusicService extends Service {
 
     public void setAndRecordPlayPos(int nextPos) {
         synchronized (this) {
-
             if (mShuffleMode != SHUFFLE_NONE) {
                 mHistory.add(mPlayPos);
                 if (mHistory.size() > MAX_HISTORY_SIZE) {
@@ -2238,7 +2230,6 @@ public class MusicService extends Service {
     }
 
     public interface TrackErrorExtra {
-
         String TRACK_NAME = "trackname";
     }
 
@@ -2246,12 +2237,10 @@ public class MusicService extends Service {
         private final WeakReference<MusicService> mService;
         private float mCurrentVolume = 1.0f;
 
-
         public MusicPlayerHandler(final MusicService service, final Looper looper) {
             super(looper);
             mService = new WeakReference<MusicService>(service);
         }
-
 
         @Override
         public void handleMessage(final Message msg) {
@@ -2352,7 +2341,6 @@ public class MusicService extends Service {
     }
 
     private static final class Shuffler {
-
         private final LinkedList<Integer> mHistoryOfNumbers = new LinkedList<Integer>();
 
         private final TreeSet<Integer> mPreviousNumbers = new TreeSet<Integer>();
@@ -2361,11 +2349,9 @@ public class MusicService extends Service {
 
         private int mPrevious;
 
-
         public Shuffler() {
             super();
         }
-
 
         public int nextInt(final int interval) {
             int next;
@@ -2379,7 +2365,6 @@ public class MusicService extends Service {
             cleanUpHistory();
             return next;
         }
-
 
         private void cleanUpHistory() {
             if (!mHistoryOfNumbers.isEmpty() && mHistoryOfNumbers.size() >= MAX_HISTORY_SIZE) {
@@ -2415,13 +2400,11 @@ public class MusicService extends Service {
 
         private String mNextMediaPath;
 
-
         public MultiPlayer(final MusicService service) {
             mService = new WeakReference<MusicService>(service);
             mCurrentMediaPlayer.setWakeMode(mService.get(), PowerManager.PARTIAL_WAKE_LOCK);
 
         }
-
 
         public void setDataSource(final String path) {
             try {
@@ -2433,7 +2416,6 @@ public class MusicService extends Service {
                 e.printStackTrace();
             }
         }
-
 
         private boolean setDataSourceImpl(final MediaPlayer player, final String path) {
             try {
@@ -2458,7 +2440,6 @@ public class MusicService extends Service {
             player.setOnErrorListener(this);
             return true;
         }
-
 
         public void setNextDataSource(final String path) {
             mNextMediaPath = null;
@@ -2495,53 +2476,43 @@ public class MusicService extends Service {
             }
         }
 
-
         public void setHandler(final Handler handler) {
             mHandler = handler;
         }
-
 
         public boolean isInitialized() {
             return mIsInitialized;
         }
 
-
         public void start() {
             mCurrentMediaPlayer.start();
         }
-
 
         public void stop() {
             mCurrentMediaPlayer.reset();
             mIsInitialized = false;
         }
 
-
         public void release() {
             mCurrentMediaPlayer.release();
         }
-
 
         public void pause() {
             mCurrentMediaPlayer.pause();
         }
 
-
         public long duration() {
             return mCurrentMediaPlayer.getDuration();
         }
-
 
         public long position() {
             return mCurrentMediaPlayer.getCurrentPosition();
         }
 
-
         public long seek(final long whereto) {
             mCurrentMediaPlayer.seekTo((int) whereto);
             return whereto;
         }
-
 
         public void setVolume(final float vol) {
             try {
@@ -2565,8 +2536,7 @@ public class MusicService extends Service {
             switch (what) {
                 case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
                     final MusicService service = mService.get();
-                    final TrackErrorInfo errorInfo = new TrackErrorInfo(service.getAudioId(),
-                            service.getTrackName());
+                    final TrackErrorInfo errorInfo = new TrackErrorInfo(service.getAudioId(), service.getTrackName());
 
                     mIsInitialized = false;
                     mCurrentMediaPlayer.release();
@@ -2580,7 +2550,6 @@ public class MusicService extends Service {
             }
             return false;
         }
-
 
         @Override
         public void onCompletion(final MediaPlayer mp) {
@@ -2599,13 +2568,11 @@ public class MusicService extends Service {
     }
 
     private static final class ServiceStub extends ITimberService.Stub {
-
         private final WeakReference<MusicService> mService;
 
         private ServiceStub(final MusicService service) {
             mService = new WeakReference<MusicService>(service);
         }
-
 
         @Override
         public void openFile(final String path) throws RemoteException {
@@ -2627,7 +2594,6 @@ public class MusicService extends Service {
         public void pause() throws RemoteException {
             mService.get().pause();
         }
-
 
         @Override
         public void play() throws RemoteException {
@@ -2810,12 +2776,10 @@ public class MusicService extends Service {
             return mService.get().removeTracks(first, last);
         }
 
-
         @Override
         public int removeTrack(final long id) throws RemoteException {
             return mService.get().removeTrack(id);
         }
-
 
         @Override
         public boolean removeTrackAtPosition(final long id, final int position)
@@ -2823,22 +2787,18 @@ public class MusicService extends Service {
             return mService.get().removeTrackAtPosition(id, position);
         }
 
-
         @Override
         public int getMediaMountedCount() throws RemoteException {
             return mService.get().getMediaMountedCount();
         }
 
-
         @Override
         public int getAudioSessionId() throws RemoteException {
             return mService.get().getAudioSessionId();
         }
-
     }
 
     private class MediaStoreObserver extends ContentObserver implements Runnable {
-
         private static final long REFRESH_DELAY = 500;
         private Handler mHandler;
 
@@ -2849,15 +2809,12 @@ public class MusicService extends Service {
 
         @Override
         public void onChange(boolean selfChange) {
-
-
             mHandler.removeCallbacks(this);
             mHandler.postDelayed(this, REFRESH_DELAY);
         }
 
         @Override
         public void run() {
-
             Log.e("ELEVEN", "calling refresh!");
             refresh();
         }

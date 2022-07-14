@@ -2239,8 +2239,8 @@ public class MusicService extends Service {
         return mPlaylist;
     }
 
-    public void setPlaylist(ArrayList<MusicPlaybackTrack> mPlaylist) {
-        this.mPlaylist = mPlaylist;
+    public void setPlaylist(ArrayList<MusicPlaybackTrack> tracks) {
+        this.mPlaylist = tracks;
     }
 
     public interface TrackErrorExtra {

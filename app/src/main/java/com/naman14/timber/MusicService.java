@@ -933,7 +933,7 @@ public class MusicService extends Service {
     }
 
     private int getNextPosition(final boolean force) {
-        if (playlist.getTracks() == null || playlist.isEmpty()) {
+        if (playlist.isEmpty()) {
             return -1;
         }
         if (!force && mRepeatMode == REPEAT_CURRENT) {
@@ -2873,7 +2873,7 @@ public class MusicService extends Service {
         }
 
         public boolean isEmpty() {
-            return tracks.size() == 0;
+            return tracks == null || tracks.size() == 0;
         }
 
         public boolean isNotEmpty() {

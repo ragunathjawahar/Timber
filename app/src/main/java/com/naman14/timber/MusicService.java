@@ -734,8 +734,8 @@ public class MusicService extends Service {
                 return 0;
             } else if (first < 0) {
                 first = 0;
-            } else if (last >= playlist.getTracks().size()) {
-                last = playlist.getTracks().size() - 1;
+            } else if (last >= playlist.size()) {
+                last = playlist.size() - 1;
             }
 
             boolean gotonext = false;
@@ -747,7 +747,7 @@ public class MusicService extends Service {
             }
             final int numToRemove = last - first + 1;
 
-            if (first == 0 && last == playlist.getTracks().size() - 1) {
+            if (first == 0 && last == playlist.size() - 1) {
                 mPlayPos = -1;
                 mNextPlayPos = -1;
                 playlist.clear();
@@ -775,7 +775,7 @@ public class MusicService extends Service {
                 } else {
                     if (mShuffleMode != SHUFFLE_NONE) {
                         mPlayPos = getNextPosition(true);
-                    } else if (mPlayPos >= playlist.getTracks().size()) {
+                    } else if (mPlayPos >= playlist.size()) {
                         mPlayPos = 0;
                     }
                     final boolean wasPlaying = isPlaying();
@@ -798,9 +798,9 @@ public class MusicService extends Service {
             position = 0;
         }
 
-        playlist.getTracks().ensureCapacity(playlist.getTracks().size() + addlen);
-        if (position > playlist.getTracks().size()) {
-            position = playlist.getTracks().size();
+        playlist.getTracks().ensureCapacity(playlist.size() + addlen);
+        if (position > playlist.size()) {
+            position = playlist.size();
         }
 
         final ArrayList<MusicPlaybackTrack> arrayList = new ArrayList<MusicPlaybackTrack>(addlen);
@@ -896,7 +896,7 @@ public class MusicService extends Service {
                 }
 
                 closeCursor();
-                if (mOpenFailedCounter++ < 10 && playlist.getTracks().size() > 1) {
+                if (mOpenFailedCounter++ < 10 && playlist.size() > 1) {
                     final int pos = getNextPosition(false);
                     if (pos < 0) {
                         shutdown = true;
@@ -942,7 +942,7 @@ public class MusicService extends Service {
             }
             return mPlayPos;
         } else if (mShuffleMode == SHUFFLE_NORMAL) {
-            final int numTracks = playlist.getTracks().size();
+            final int numTracks = playlist.size();
 
 
             final int[] trackNumPlays = new int[numTracks];
@@ -999,7 +999,7 @@ public class MusicService extends Service {
             doAutoShuffleUpdate();
             return mPlayPos + 1;
         } else {
-            if (mPlayPos >= playlist.getTracks().size() - 1) {
+            if (mPlayPos >= playlist.size() - 1) {
                 if (mRepeatMode == REPEAT_NONE && !force) {
                     return -1;
                 } else if (mRepeatMode == REPEAT_ALL || force) {
@@ -1019,7 +1019,7 @@ public class MusicService extends Service {
     private void setNextTrack(int position) {
         mNextPlayPos = position;
         if (D) Log.d(TAG, "setNextTrack: next play position = " + mNextPlayPos);
-        if (mNextPlayPos >= 0 && playlist.getTracks() != null && mNextPlayPos < playlist.getTracks().size()) {
+        if (mNextPlayPos >= 0 && playlist.getTracks() != null && mNextPlayPos < playlist.size()) {
             final long id = playlist.getTracks().get(mNextPlayPos).mId;
             mPlayer.setNextDataSource(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/" + id);
         } else {
@@ -1061,7 +1061,7 @@ public class MusicService extends Service {
             removeTracks(0, mPlayPos - 9);
             notify = true;
         }
-        final int toAdd = 7 - (playlist.getTracks().size() - (mPlayPos < 0 ? -1 : mPlayPos));
+        final int toAdd = 7 - (playlist.size() - (mPlayPos < 0 ? -1 : mPlayPos));
         for (int i = 0; i < toAdd; i++) {
             int lookback = mHistory.size();
             int idx = -1;
@@ -1138,7 +1138,7 @@ public class MusicService extends Service {
             saveQueue(true);
             if (isPlaying()) {
 
-                if (mNextPlayPos >= 0 && mNextPlayPos < playlist.getTracks().size()
+                if (mNextPlayPos >= 0 && mNextPlayPos < playlist.size()
                         && getShuffleMode() != SHUFFLE_NONE) {
                     setNextTrack(mNextPlayPos);
                 } else {
@@ -1320,7 +1320,7 @@ public class MusicService extends Service {
         if (NotificationHelper.isSupported(n)) {
             StringBuilder selection = new StringBuilder();
             StringBuilder order = new StringBuilder().append("CASE _id \n");
-            for (int i = 0; i < playlist.getTracks().size(); i++) {
+            for (int i = 0; i < playlist.size(); i++) {
                 selection.append("_id=").append(playlist.getTracks().get(i).mId).append(" OR ");
                 order.append("WHEN ").append(playlist.getTracks().get(i).mId).append(" THEN ").append(i).append("\n");
             }
@@ -1395,7 +1395,7 @@ public class MusicService extends Service {
         }
         if (playlist.isNotEmpty()) {
             final int pos = mPreferences.getInt("curpos", 0);
-            if (pos < 0 || pos >= playlist.getTracks().size()) {
+            if (pos < 0 || pos >= playlist.size()) {
                 playlist.clear();
                 return;
             }
@@ -1435,7 +1435,7 @@ public class MusicService extends Service {
                 shufmode = SHUFFLE_NONE;
             }
             if (shufmode != SHUFFLE_NONE) {
-                mHistory = mPlaybackStateStore.getHistory(playlist.getTracks().size());
+                mHistory = mPlaybackStateStore.getHistory(playlist.size());
             }
             if (shufmode == SHUFFLE_AUTO) {
                 if (!makeAutoShuffleList()) {
@@ -1621,7 +1621,7 @@ public class MusicService extends Service {
     public int removeTrack(final long id) {
         int numremoved = 0;
         synchronized (this) {
-            for (int i = 0; i < playlist.getTracks().size(); i++) {
+            for (int i = 0; i < playlist.size(); i++) {
                 if (playlist.getTracks().get(i).mId == id) {
                     numremoved += removeTracksInternal(i, i);
                     i--;
@@ -1637,7 +1637,7 @@ public class MusicService extends Service {
     public boolean removeTrackAtPosition(final long id, final int position) {
         synchronized (this) {
             if (position >= 0 &&
-                    position < playlist.getTracks().size() &&
+                    position < playlist.size() &&
                     playlist.getTracks().get(position).mId == id) {
 
                 return removeTracks(position, position) > 0;
@@ -1729,7 +1729,7 @@ public class MusicService extends Service {
 
     public String getGenreName() {
         synchronized (this) {
-            if (mCursor == null || mPlayPos < 0 || mPlayPos >= playlist.getTracks().size()) {
+            if (mCursor == null || mPlayPos < 0 || mPlayPos >= playlist.size()) {
                 return null;
             }
             String[] genreProjection = {MediaStore.Audio.Genres.NAME};
@@ -1801,7 +1801,7 @@ public class MusicService extends Service {
     }
 
     public synchronized MusicPlaybackTrack getTrack(int index) {
-        if (index >= 0 && index < playlist.getTracks().size() && mPlayer.isInitialized()) {
+        if (index >= 0 && index < playlist.size() && mPlayer.isInitialized()) {
             return playlist.getTracks().get(index);
         }
 
@@ -1810,7 +1810,7 @@ public class MusicService extends Service {
 
     public long getNextAudioId() {
         synchronized (this) {
-            if (mNextPlayPos >= 0 && mNextPlayPos < playlist.getTracks().size() && mPlayer.isInitialized()) {
+            if (mNextPlayPos >= 0 && mNextPlayPos < playlist.size() && mPlayer.isInitialized()) {
                 return playlist.getTracks().get(mNextPlayPos).mId;
             }
         }
@@ -1821,7 +1821,7 @@ public class MusicService extends Service {
         synchronized (this) {
             if (mPlayer.isInitialized()) {
                 int pos = getPreviousPlayPosition(false);
-                if (pos >= 0 && pos < playlist.getTracks().size()) {
+                if (pos >= 0 && pos < playlist.size()) {
                     return playlist.getTracks().get(pos).mId;
                 }
             }
@@ -1879,7 +1879,7 @@ public class MusicService extends Service {
 
     public long[] getQueue() {
         synchronized (this) {
-            final int len = playlist.getTracks().size();
+            final int len = playlist.size();
             final long[] list = new long[len];
             for (int i = 0; i < len; i++) {
                 list[i] = playlist.getTracks().get(i).mId;
@@ -1890,7 +1890,7 @@ public class MusicService extends Service {
 
     public long getQueueItemAtPosition(int position) {
         synchronized (this) {
-            if (position >= 0 && position < playlist.getTracks().size()) {
+            if (position >= 0 && position < playlist.size()) {
                 return playlist.getTracks().get(position).mId;
             }
         }
@@ -1900,7 +1900,7 @@ public class MusicService extends Service {
 
     public int getQueueSize() {
         synchronized (this) {
-            return playlist.getTracks().size();
+            return playlist.size();
         }
     }
 
@@ -1936,7 +1936,7 @@ public class MusicService extends Service {
             final long oldId = getAudioId();
             final int listlength = list.length;
             boolean newlist = true;
-            if (playlist.getTracks().size() == listlength) {
+            if (playlist.size() == listlength) {
                 newlist = false;
                 for (int i = 0; i < listlength; i++) {
                     if (list[i] != playlist.getTracks().get(i).mId) {
@@ -1952,7 +1952,7 @@ public class MusicService extends Service {
             if (position >= 0) {
                 mPlayPos = position;
             } else {
-                mPlayPos = mShuffler.nextInt(playlist.getTracks().size());
+                mPlayPos = mShuffler.nextInt(playlist.size());
             }
             mHistory.clear();
             openCurrentAndNext();
@@ -2012,7 +2012,7 @@ public class MusicService extends Service {
             cancelShutdown();
             updateNotification();
             notifyChange(META_CHANGED);
-        } else if (playlist.getTracks().size() <= 0) {
+        } else if (playlist.size() <= 0) {
             setShuffleMode(SHUFFLE_AUTO);
         }
     }
@@ -2038,7 +2038,7 @@ public class MusicService extends Service {
     public void gotoNext(final boolean force) {
         if (D) Log.d(TAG, "Going to next track");
         synchronized (this) {
-            if (playlist.getTracks().size() <= 0) {
+            if (playlist.size() <= 0) {
                 if (D) Log.d(TAG, "No play queue");
                 scheduleDelayedShutdown();
                 return;
@@ -2063,7 +2063,7 @@ public class MusicService extends Service {
 
     public void goToPosition(int pos) {
         synchronized (this) {
-            if (playlist.getTracks().size() <= 0) {
+            if (playlist.size() <= 0) {
                 if (D) Log.d(TAG, "No play queue");
                 scheduleDelayedShutdown();
                 return;
@@ -2142,7 +2142,7 @@ public class MusicService extends Service {
                 if (mPlayPos > 0) {
                     return mPlayPos - 1;
                 } else {
-                    return playlist.getTracks().size() - 1;
+                    return playlist.size() - 1;
                 }
             }
         }
@@ -2154,11 +2154,11 @@ public class MusicService extends Service {
 
     public void moveQueueItem(int index1, int index2) {
         synchronized (this) {
-            if (index1 >= playlist.getTracks().size()) {
-                index1 = playlist.getTracks().size() - 1;
+            if (index1 >= playlist.size()) {
+                index1 = playlist.size() - 1;
             }
-            if (index2 >= playlist.getTracks().size()) {
-                index2 = playlist.getTracks().size() - 1;
+            if (index2 >= playlist.size()) {
+                index2 = playlist.size() - 1;
             }
 
             if (index1 == index2) {
@@ -2187,7 +2187,7 @@ public class MusicService extends Service {
 
     public void enqueue(final long[] list, final int action, long sourceId, IdType sourceType) {
         synchronized (this) {
-            if (action == NEXT && mPlayPos + 1 < playlist.getTracks().size()) {
+            if (action == NEXT && mPlayPos + 1 < playlist.size()) {
                 addToPlayList(list, mPlayPos + 1, sourceId, sourceType);
                 mNextPlayPos = mPlayPos + 1;
                 notifyChange(QUEUE_CHANGED);
@@ -2882,6 +2882,10 @@ public class MusicService extends Service {
 
         public void clear() {
             tracks.clear();
+        }
+
+        public int size() {
+            return tracks.size();
         }
     }
 }

@@ -118,7 +118,6 @@ public class MusicService extends Service {
     public static final String SHUFFLE_ACTION = "com.naman14.timber.shuffle";
     public static final String FROM_MEDIA_BUTTON = "frommediabutton";
     public static final String REFRESH = "com.naman14.timber.refresh";
-    public static final String UPDATE_LOCKSCREEN = "com.naman14.timber.updatelockscreen";
     public static final String CMDNAME = "command";
     public static final String CMDTOGGLEPAUSE = "togglepause";
     public static final String CMDSTOP = "stop";
@@ -126,7 +125,6 @@ public class MusicService extends Service {
     public static final String CMDPLAY = "play";
     public static final String CMDPREVIOUS = "previous";
     public static final String CMDNEXT = "next";
-    public static final String CMDNOTIF = "buttonId";
     public static final String UPDATE_PREFERENCES = "updatepreferences";
     public static final String CHANNEL_ID = "timber_channel_01";
     public static final int NEXT = 2;
@@ -197,7 +195,6 @@ public class MusicService extends Service {
     private boolean mPausedByTransientLossOfFocus = false;
 
     private MediaSessionCompat mSession;
-    @SuppressWarnings("deprecation")
     private RemoteControlClient mRemoteControlClient;
 
     private ComponentName mMediaButtonReceiverComponent;
@@ -241,7 +238,7 @@ public class MusicService extends Service {
 
         @Override
         public void onReceive(final Context context, final Intent intent) {
-            final String command = intent.getStringExtra(CMDNAME);
+            intent.getStringExtra(CMDNAME);
             handleCommandIntent(intent);
         }
     };
@@ -366,7 +363,6 @@ public class MusicService extends Service {
         mActivateXTrackSelector = pref.getXPosedTrackselectorEnabled();
     }
 
-    @SuppressWarnings("deprecation")
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private void setUpRemoteControlClient() {
         //Legacy for ICS
@@ -664,11 +660,11 @@ public class MusicService extends Service {
                 @Override
                 public void onReceive(final Context context, final Intent intent) {
                     final String action = intent.getAction();
-                    if (action.equals(Intent.ACTION_MEDIA_EJECT)) {
+                    if (Intent.ACTION_MEDIA_EJECT.equals(action)) {
                         saveQueue(true);
                         mQueueIsSaveable = false;
                         closeExternalStorageFiles(intent.getData().getPath());
-                    } else if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
+                    } else if (Intent.ACTION_MEDIA_MOUNTED.equals(action)) {
                         mMediaMountedCount++;
                         mCardId = getCardId();
                         reloadQueueAfterPermissionCheck();
@@ -717,9 +713,7 @@ public class MusicService extends Service {
         if (goToIdle) {
             setIsSupposedToBePlaying(false, false);
         } else {
-            if (TimberUtils.isLollipop())
-                stopForeground(false);
-            else stopForeground(true);
+            stopForeground(!TimberUtils.isLollipop());
         }
     }
 
@@ -798,7 +792,7 @@ public class MusicService extends Service {
             position = playlist.size();
         }
 
-        final ArrayList<MusicPlaybackTrack> arrayList = new ArrayList<MusicPlaybackTrack>(addlen);
+        final ArrayList<MusicPlaybackTrack> arrayList = new ArrayList<>(addlen);
         for (int i = 0; i < list.length; i++) {
             arrayList.add(new MusicPlaybackTrack(list[i], sourceId, sourceType, i));
         }
@@ -932,10 +926,7 @@ public class MusicService extends Service {
             return -1;
         }
         if (!force && mRepeatMode == REPEAT_CURRENT) {
-            if (mPlayPos < 0) {
-                return 0;
-            }
-            return mPlayPos;
+            return Math.max(mPlayPos, 0);
         } else if (mShuffleMode == SHUFFLE_NORMAL) {
             final int numTracks = playlist.size();
 
@@ -948,7 +939,7 @@ public class MusicService extends Service {
 
             final int numHistory = mHistory.size();
             for (int i = 0; i < numHistory; i++) {
-                final int idx = mHistory.get(i).intValue();
+                final int idx = mHistory.get(i);
                 if (idx >= 0 && idx < numTracks) {
                     trackNumPlays[idx]++;
                 }
@@ -960,11 +951,11 @@ public class MusicService extends Service {
 
             int minNumPlays = Integer.MAX_VALUE;
             int numTracksWithMinNumPlays = 0;
-            for (int i = 0; i < trackNumPlays.length; i++) {
-                if (trackNumPlays[i] < minNumPlays) {
-                    minNumPlays = trackNumPlays[i];
+            for (int trackNumPlay : trackNumPlays) {
+                if (trackNumPlay < minNumPlays) {
+                    minNumPlays = trackNumPlay;
                     numTracksWithMinNumPlays = 1;
-                } else if (trackNumPlays[i] == minNumPlays) {
+                } else if (trackNumPlay == minNumPlays) {
                     numTracksWithMinNumPlays++;
                 }
             }
@@ -1040,7 +1031,7 @@ public class MusicService extends Service {
             }
             mAutoShuffleList = list;
             return true;
-        } catch (final RuntimeException e) {
+        } catch (final RuntimeException ignored) {
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -1059,7 +1050,7 @@ public class MusicService extends Service {
         final int toAdd = 7 - (playlist.size() - (mPlayPos < 0 ? -1 : mPlayPos));
         for (int i = 0; i < toAdd; i++) {
             int lookback = mHistory.size();
-            int idx = -1;
+            int idx;
             while (true) {
                 idx = mShuffler.nextInt(mAutoShuffleList.length);
                 if (!wasRecentlyUsed(idx, lookback)) {
@@ -1151,7 +1142,6 @@ public class MusicService extends Service {
 
     }
 
-    @SuppressWarnings("deprecation")
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private void updateRemoteControlClient(final String what) {
         //Legacy for ICS
@@ -1180,7 +1170,6 @@ public class MusicService extends Service {
                 editor.putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, duration());
                 editor.putBitmap(MediaMetadataEditor.BITMAP_KEY_ARTWORK, albumArt);
                 editor.apply();
-
             }
             mRemoteControlClient.setPlaybackState(playState);
         }
@@ -1343,7 +1332,7 @@ public class MusicService extends Service {
         }
     }
 
-    private final PendingIntent retrievePlaybackAction(final String action) {
+    private PendingIntent retrievePlaybackAction(final String action) {
         final ComponentName serviceName = new ComponentName(this, MusicService.class);
         Intent intent = new Intent(action);
         intent.setComponent(serviceName);
@@ -1454,7 +1443,7 @@ public class MusicService extends Service {
                 boolean shouldAddToPlaylist = true;
                 long id = -1;
                 try {
-                    id = Long.valueOf(uri.getLastPathSegment());
+                    id = Long.parseLong(uri.getLastPathSegment());
                 } catch (NumberFormatException ex) {
                     // Ignore
                 }
@@ -1478,7 +1467,7 @@ public class MusicService extends Service {
                             return false;
                         }
                     } else {
-                        updateCursorForDownloadedFile(this, uri);
+                        updateCursorForDownloadedFile(uri);
                         shouldAddToPlaylist = false;
                     }
 
@@ -1520,7 +1509,7 @@ public class MusicService extends Service {
         }
     }
 
-    private void updateCursorForDownloadedFile(Context context, Uri uri) {
+    private void updateCursorForDownloadedFile(Uri uri) {
         synchronized (this) {
             closeCursor();
             MatrixCursor cursor = new MatrixCursor(PROJECTION_MATRIX);
@@ -2131,7 +2120,7 @@ public class MusicService extends Service {
                 if (removeFromHistory) {
                     mHistory.remove(histsize - 1);
                 }
-                return pos.intValue();
+                return pos;
             } else {
                 if (mPlayPos > 0) {
                     return mPlayPos - 1;
@@ -2239,7 +2228,7 @@ public class MusicService extends Service {
 
         public MusicPlayerHandler(final MusicService service, final Looper looper) {
             super(looper);
-            mService = new WeakReference<MusicService>(service);
+            mService = new WeakReference<>(service);
         }
 
         @Override
@@ -2341,9 +2330,9 @@ public class MusicService extends Service {
     }
 
     private static final class Shuffler {
-        private final LinkedList<Integer> mHistoryOfNumbers = new LinkedList<Integer>();
+        private final LinkedList<Integer> mHistoryOfNumbers = new LinkedList<>();
 
-        private final TreeSet<Integer> mPreviousNumbers = new TreeSet<Integer>();
+        private final TreeSet<Integer> mPreviousNumbers = new TreeSet<>();
 
         private final Random mRandom = new Random();
 
@@ -2358,7 +2347,7 @@ public class MusicService extends Service {
             do {
                 next = mRandom.nextInt(interval);
             } while (next == mPrevious && interval > 1
-                    && !mPreviousNumbers.contains(Integer.valueOf(next)));
+                    && !mPreviousNumbers.contains(next));
             mPrevious = next;
             mHistoryOfNumbers.add(mPrevious);
             mPreviousNumbers.add(mPrevious);
@@ -2398,10 +2387,8 @@ public class MusicService extends Service {
 
         private boolean mIsInitialized = false;
 
-        private String mNextMediaPath;
-
         public MultiPlayer(final MusicService service) {
-            mService = new WeakReference<MusicService>(service);
+            mService = new WeakReference<>(service);
             mCurrentMediaPlayer.setWakeMode(mService.get(), PowerManager.PARTIAL_WAKE_LOCK);
 
         }
@@ -2442,7 +2429,6 @@ public class MusicService extends Service {
         }
 
         public void setNextDataSource(final String path) {
-            mNextMediaPath = null;
             try {
                 mCurrentMediaPlayer.setNextMediaPlayer(null);
             } catch (IllegalArgumentException e) {
@@ -2463,7 +2449,6 @@ public class MusicService extends Service {
             mNextMediaPlayer.setAudioSessionId(getAudioSessionId());
             try {
                 if (setDataSourceImpl(mNextMediaPlayer, path)) {
-                    mNextMediaPath = path;
                     mCurrentMediaPlayer.setNextMediaPlayer(mNextMediaPlayer);
                 } else {
                     if (mNextMediaPlayer != null) {
@@ -2526,10 +2511,6 @@ public class MusicService extends Service {
             return mCurrentMediaPlayer.getAudioSessionId();
         }
 
-        public void setAudioSessionId(final int sessionId) {
-            mCurrentMediaPlayer.setAudioSessionId(sessionId);
-        }
-
         @Override
         public boolean onError(final MediaPlayer mp, final int what, final int extra) {
             Log.w(TAG, "Music Server Error what: " + what + " extra: " + extra);
@@ -2556,7 +2537,6 @@ public class MusicService extends Service {
             if (mp == mCurrentMediaPlayer && mNextMediaPlayer != null) {
                 mCurrentMediaPlayer.release();
                 mCurrentMediaPlayer = mNextMediaPlayer;
-                mNextMediaPath = null;
                 mNextMediaPlayer = null;
                 mHandler.sendEmptyMessage(TRACK_WENT_TO_NEXT);
             } else {
@@ -2571,11 +2551,11 @@ public class MusicService extends Service {
         private final WeakReference<MusicService> mService;
 
         private ServiceStub(final MusicService service) {
-            mService = new WeakReference<MusicService>(service);
+            mService = new WeakReference<>(service);
         }
 
         @Override
-        public void openFile(final String path) throws RemoteException {
+        public void openFile(final String path) {
             mService.get().openFile(path);
         }
 
@@ -2586,7 +2566,7 @@ public class MusicService extends Service {
         }
 
         @Override
-        public void stop() throws RemoteException {
+        public void stop() {
             mService.get().stop();
         }
 
@@ -2601,7 +2581,7 @@ public class MusicService extends Service {
         }
 
         @Override
-        public void prev(boolean forcePrevious) throws RemoteException {
+        public void prev(boolean forcePrevious) {
             mService.get().prev(forcePrevious);
         }
 
@@ -2611,58 +2591,57 @@ public class MusicService extends Service {
         }
 
         @Override
-        public void enqueue(final long[] list, final int action, long sourceId, int sourceType)
-                throws RemoteException {
+        public void enqueue(final long[] list, final int action, long sourceId, int sourceType) {
             mService.get().enqueue(list, action, sourceId, IdType.getTypeById(sourceType));
         }
 
         @Override
-        public void moveQueueItem(final int from, final int to) throws RemoteException {
+        public void moveQueueItem(final int from, final int to) {
             mService.get().moveQueueItem(from, to);
         }
 
         @Override
-        public void refresh() throws RemoteException {
+        public void refresh() {
             mService.get().refresh();
         }
 
         @Override
-        public void playlistChanged() throws RemoteException {
+        public void playlistChanged() {
             mService.get().playlistChanged();
         }
 
         @Override
-        public boolean isPlaying() throws RemoteException {
+        public boolean isPlaying() {
             return mService.get().isPlaying();
         }
 
         @Override
-        public long[] getQueue() throws RemoteException {
+        public long[] getQueue() {
             return mService.get().getQueue();
         }
 
         @Override
-        public long getQueueItemAtPosition(int position) throws RemoteException {
+        public long getQueueItemAtPosition(int position) {
             return mService.get().getQueueItemAtPosition(position);
         }
 
         @Override
-        public int getQueueSize() throws RemoteException {
+        public int getQueueSize() {
             return mService.get().getQueueSize();
         }
 
         @Override
-        public int getQueueHistoryPosition(int position) throws RemoteException {
+        public int getQueueHistoryPosition(int position) {
             return mService.get().getQueueHistoryPosition(position);
         }
 
         @Override
-        public int getQueueHistorySize() throws RemoteException {
+        public int getQueueHistorySize() {
             return mService.get().getQueueHistorySize();
         }
 
         @Override
-        public int[] getQueueHistoryList() throws RemoteException {
+        public int[] getQueueHistoryList() {
             return mService.get().getQueueHistoryList();
         }
 
@@ -2677,67 +2656,67 @@ public class MusicService extends Service {
         }
 
         @Override
-        public long seek(final long position) throws RemoteException {
+        public long seek(final long position) {
             return mService.get().seek(position);
         }
 
         @Override
-        public void seekRelative(final long deltaInMs) throws RemoteException {
+        public void seekRelative(final long deltaInMs) {
             mService.get().seekRelative(deltaInMs);
         }
 
         @Override
-        public long getAudioId() throws RemoteException {
+        public long getAudioId() {
             return mService.get().getAudioId();
         }
 
         @Override
-        public MusicPlaybackTrack getCurrentTrack() throws RemoteException {
+        public MusicPlaybackTrack getCurrentTrack() {
             return mService.get().getCurrentTrack();
         }
 
         @Override
-        public MusicPlaybackTrack getTrack(int index) throws RemoteException {
+        public MusicPlaybackTrack getTrack(int index) {
             return mService.get().getTrack(index);
         }
 
         @Override
-        public long getNextAudioId() throws RemoteException {
+        public long getNextAudioId() {
             return mService.get().getNextAudioId();
         }
 
         @Override
-        public long getPreviousAudioId() throws RemoteException {
+        public long getPreviousAudioId() {
             return mService.get().getPreviousAudioId();
         }
 
         @Override
-        public long getArtistId() throws RemoteException {
+        public long getArtistId() {
             return mService.get().getArtistId();
         }
 
         @Override
-        public long getAlbumId() throws RemoteException {
+        public long getAlbumId() {
             return mService.get().getAlbumId();
         }
 
         @Override
-        public String getArtistName() throws RemoteException {
+        public String getArtistName() {
             return mService.get().getArtistName();
         }
 
         @Override
-        public String getTrackName() throws RemoteException {
+        public String getTrackName() {
             return mService.get().getTrackName();
         }
 
         @Override
-        public String getAlbumName() throws RemoteException {
+        public String getAlbumName() {
             return mService.get().getAlbumName();
         }
 
         @Override
-        public String getPath() throws RemoteException {
+        public String getPath() {
             return mService.get().getPath();
         }
 
@@ -2752,55 +2731,54 @@ public class MusicService extends Service {
         }
 
         @Override
-        public int getShuffleMode() throws RemoteException {
+        public int getShuffleMode() {
             return mService.get().getShuffleMode();
         }
 
         @Override
-        public void setShuffleMode(final int shufflemode) throws RemoteException {
+        public void setShuffleMode(final int shufflemode) {
             mService.get().setShuffleMode(shufflemode);
         }
 
         @Override
-        public int getRepeatMode() throws RemoteException {
+        public int getRepeatMode() {
             return mService.get().getRepeatMode();
         }
 
         @Override
-        public void setRepeatMode(final int repeatmode) throws RemoteException {
+        public void setRepeatMode(final int repeatmode) {
             mService.get().setRepeatMode(repeatmode);
         }
 
         @Override
-        public int removeTracks(final int first, final int last) throws RemoteException {
+        public int removeTracks(final int first, final int last) {
             return mService.get().removeTracks(first, last);
         }
 
         @Override
-        public int removeTrack(final long id) throws RemoteException {
+        public int removeTrack(final long id) {
             return mService.get().removeTrack(id);
         }
 
         @Override
-        public boolean removeTrackAtPosition(final long id, final int position)
-                throws RemoteException {
+        public boolean removeTrackAtPosition(final long id, final int position) {
             return mService.get().removeTrackAtPosition(id, position);
         }
 
         @Override
-        public int getMediaMountedCount() throws RemoteException {
+        public int getMediaMountedCount() {
             return mService.get().getMediaMountedCount();
         }
 
         @Override
-        public int getAudioSessionId() throws RemoteException {
+        public int getAudioSessionId() {
             return mService.get().getAudioSessionId();
         }
     }
 
     private class MediaStoreObserver extends ContentObserver implements Runnable {
         private static final long REFRESH_DELAY = 500;
-        private Handler mHandler;
+        private final Handler mHandler;
 
         public MediaStoreObserver(Handler handler) {
             super(handler);

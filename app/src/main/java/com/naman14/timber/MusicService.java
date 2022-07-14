@@ -1076,7 +1076,8 @@ public class MusicService extends Service {
             if (mHistory.size() > MAX_HISTORY_SIZE) {
                 mHistory.remove(0);
             }
-            playlist.getTracks().add(new MusicPlaybackTrack(mAutoShuffleList[idx], -1, TimberUtils.IdType.NA, -1));
+            MusicPlaybackTrack track = new MusicPlaybackTrack(mAutoShuffleList[idx], -1, IdType.NA, -1);
+            playlist.getTracks().add(track);
             notify = true;
         }
         if (notify) {

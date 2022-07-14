@@ -2877,7 +2877,7 @@ public class MusicService extends Service {
         }
 
         public boolean isNotEmpty() {
-            return tracks.size() > 0;
+            return tracks != null && tracks.size() > 0;
         }
 
         public void clear() {

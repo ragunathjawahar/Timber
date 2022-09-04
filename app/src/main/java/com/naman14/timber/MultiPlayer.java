@@ -169,8 +169,8 @@ final class MultiPlayer implements MediaPlayer.OnErrorListener, MediaPlayer.OnCo
     }
 
     @Override
-    public void onCompletion(final MediaPlayer mp) {
-        if (mp == mCurrentMediaPlayer && mNextMediaPlayer != null) {
+    public void onCompletion(final MediaPlayer mediaPlayer) {
+        if (mediaPlayer == mCurrentMediaPlayer && mNextMediaPlayer != null) {
             mCurrentMediaPlayer.release();
             mCurrentMediaPlayer = mNextMediaPlayer;
             mNextMediaPlayer = null;

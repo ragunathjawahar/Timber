@@ -328,7 +328,7 @@ public class MusicService extends Service {
         // Attach the broadcast listener
         registerReceiver(mIntentReceiver, filter);
 
-        mMediaStoreObserver = new MediaStoreObserver(mPlayerHandler);
+        mMediaStoreObserver = new MediaStoreObserver(this, mPlayerHandler);
         getContentResolver().registerContentObserver(
                 MediaStore.Audio.Media.INTERNAL_CONTENT_URI, true, mMediaStoreObserver);
         getContentResolver().registerContentObserver(
@@ -2358,28 +2358,6 @@ public class MusicService extends Service {
                     mPreviousNumbers.remove(mHistoryOfNumbers.removeFirst());
                 }
             }
-        }
-    }
-
-    private class MediaStoreObserver extends ContentObserver implements Runnable {
-        private static final long REFRESH_DELAY = 500;
-        private final Handler mHandler;
-
-        public MediaStoreObserver(Handler handler) {
-            super(handler);
-            mHandler = handler;
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            mHandler.removeCallbacks(this);
-            mHandler.postDelayed(this, REFRESH_DELAY);
-        }
-
-        @Override
-        public void run() {
-            Log.e("ELEVEN", "calling refresh!");
-            refresh();
         }
     }
 

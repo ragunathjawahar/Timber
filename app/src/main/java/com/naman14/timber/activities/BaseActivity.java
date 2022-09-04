@@ -47,6 +47,7 @@ import com.naman14.timber.ITimberService;
 import com.naman14.timber.MusicPlayer;
 import com.naman14.timber.MusicService;
 import com.naman14.timber.R;
+import com.naman14.timber.TrackErrorExtra;
 import com.naman14.timber.cast.SimpleSessionManagerListener;
 import com.naman14.timber.cast.WebServer;
 import com.naman14.timber.listeners.MusicStateListener;
@@ -377,7 +378,7 @@ public class BaseActivity extends ATEActivity implements ServiceConnection, Musi
                     baseActivity.onPlaylistChanged();
                 } else if (action.equals(MusicService.TRACK_ERROR)) {
                     final String errorMsg = context.getString(R.string.error_playing_track,
-                            intent.getStringExtra(MusicService.TrackErrorExtra.TRACK_NAME));
+                            intent.getStringExtra(TrackErrorExtra.TRACK_NAME));
                     Toast.makeText(baseActivity, errorMsg, Toast.LENGTH_SHORT).show();
                 }
             }

@@ -2208,8 +2208,4 @@ public class MusicService extends Service {
     public void playlistChanged() {
         notifyChange(PLAYLIST_CHANGED);
     }
-
-    public interface TrackErrorExtra {
-        String TRACK_NAME = "trackname";
-    }
 }

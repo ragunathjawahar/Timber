@@ -200,19 +200,16 @@ public class MusicPlaybackState {
         }
     }
 
-    public class PlaybackQueueColumns {
-
-        public static final String NAME = "playbackqueue";
-        public static final String TRACK_ID = "trackid";
-        public static final String SOURCE_ID = "sourceid";
-        public static final String SOURCE_TYPE = "sourcetype";
-        public static final String SOURCE_POSITION = "sourceposition";
+    public interface PlaybackQueueColumns {
+        String NAME = "playbackqueue";
+        String TRACK_ID = "trackid";
+        String SOURCE_ID = "sourceid";
+        String SOURCE_TYPE = "sourcetype";
+        String SOURCE_POSITION = "sourceposition";
     }
 
-    public class PlaybackHistoryColumns {
-
-        public static final String NAME = "playbackhistory";
-
-        public static final String POSITION = "position";
+    public interface PlaybackHistoryColumns {
+        String NAME = "playbackhistory";
+        String POSITION = "position";
     }
 }

@@ -167,33 +167,35 @@ class NotificationHandler {
     }
 
     private void addXTrackSelector(Notification n) {
-        if (NotificationHelper.isSupported(n)) {
-            StringBuilder selection = new StringBuilder();
-            StringBuilder order = new StringBuilder().append("CASE _id \n");
-            for (int i = 0; i < mService.playlist.size(); i++) {
-                selection.append("_id=").append(mService.playlist.getTrackId(i)).append(" OR ");
-                order.append("WHEN ").append(mService.playlist.getTrackId(i)).append(" THEN ").append(i).append("\n");
+        if (!NotificationHelper.isSupported(n)) {
+            return;
+        }
+
+        StringBuilder selection = new StringBuilder();
+        StringBuilder order = new StringBuilder().append("CASE _id \n");
+        for (int i = 0; i < mService.playlist.size(); i++) {
+            selection.append("_id=").append(mService.playlist.getTrackId(i)).append(" OR ");
+            order.append("WHEN ").append(mService.playlist.getTrackId(i)).append(" THEN ").append(i).append("\n");
+        }
+        order.append("END");
+        Cursor c = mService.getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, NOTIFICATION_PROJECTION, selection.substring(0, selection.length() - 3), null, order.toString());
+        if (c != null && c.getCount() != 0) {
+            c.moveToFirst();
+            ArrayList<Bundle> list = new ArrayList<>();
+            do {
+                TrackItem t = new TrackItem()
+                        .setArt(TimberUtils.getAlbumArtUri(c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.ALBUM_ID))))
+                        .setTitle(c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.TITLE)))
+                        .setArtist(c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.ARTIST)))
+                        .setDuration(TimberUtils.makeShortTimeString(mService, c.getInt(c.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.DURATION)) / 1000));
+                list.add(t.get());
+            } while (c.moveToNext());
+            try {
+                NotificationHelper.insertToNotification(n, list, mService, mService.getQueuePosition());
+            } catch (ModNotInstalledException e) {
+                e.printStackTrace();
             }
-            order.append("END");
-            Cursor c = mService.getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, NOTIFICATION_PROJECTION, selection.substring(0, selection.length() - 3), null, order.toString());
-            if (c != null && c.getCount() != 0) {
-                c.moveToFirst();
-                ArrayList<Bundle> list = new ArrayList<>();
-                do {
-                    TrackItem t = new TrackItem()
-                            .setArt(TimberUtils.getAlbumArtUri(c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.ALBUM_ID))))
-                            .setTitle(c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.TITLE)))
-                            .setArtist(c.getString(c.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.ARTIST)))
-                            .setDuration(TimberUtils.makeShortTimeString(mService, c.getInt(c.getColumnIndexOrThrow(MediaStore.Audio.AudioColumns.DURATION)) / 1000));
-                    list.add(t.get());
-                } while (c.moveToNext());
-                try {
-                    NotificationHelper.insertToNotification(n, list, mService, mService.getQueuePosition());
-                } catch (ModNotInstalledException e) {
-                    e.printStackTrace();
-                }
-                c.close();
-            }
+            c.close();
         }
     }
 

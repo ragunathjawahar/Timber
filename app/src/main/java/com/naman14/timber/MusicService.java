@@ -2363,16 +2363,6 @@ public class MusicService extends Service {
         }
     }
 
-    private static final class TrackErrorInfo {
-        public long mId;
-        public String mTrackName;
-
-        public TrackErrorInfo(long id, String trackName) {
-            mId = id;
-            mTrackName = trackName;
-        }
-    }
-
     private static final class MultiPlayer implements MediaPlayer.OnErrorListener,
             MediaPlayer.OnCompletionListener {
 

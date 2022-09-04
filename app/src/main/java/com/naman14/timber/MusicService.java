@@ -2218,17 +2218,17 @@ public class MusicService extends Service {
     }
 
     private static final class MusicPlayerHandler extends Handler {
-        private final WeakReference<MusicService> mService;
+        private final WeakReference<MusicService> mServiceReference;
         private float mCurrentVolume = 1.0f;
 
         public MusicPlayerHandler(final MusicService service, final Looper looper) {
             super(looper);
-            mService = new WeakReference<>(service);
+            mServiceReference = new WeakReference<>(service);
         }
 
         @Override
         public void handleMessage(final Message msg) {
-            final MusicService service = mService.get();
+            final MusicService service = mServiceReference.get();
             if (service == null) {
                 return;
             }
@@ -2265,7 +2265,7 @@ public class MusicService extends Service {
                         }
                         break;
                     case TRACK_WENT_TO_NEXT:
-                        mService.get().scrobble();
+                        mServiceReference.get().scrobble();
                         service.setAndRecordPlayPos(service.mNextPlayPos);
                         service.setNextTrack();
                         if (service.mCursor != null) {

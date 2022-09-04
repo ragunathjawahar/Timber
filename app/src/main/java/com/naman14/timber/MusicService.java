@@ -158,7 +158,7 @@ public class MusicService extends Service {
             "audio._id AS _id", AudioColumns.ALBUM_ID, AudioColumns.TITLE,
             AudioColumns.ARTIST, AudioColumns.DURATION
     };
-    private static final Shuffler mShuffler = new Shuffler();
+    private static final Shuffler sShuffler = new Shuffler();
     private static final int NOTIFY_MODE_NONE = 0;
     private static final int NOTIFY_MODE_FOREGROUND = 1;
     private static final int NOTIFY_MODE_BACKGROUND = 2;
@@ -962,7 +962,7 @@ public class MusicService extends Service {
             }
 
 
-            int skip = mShuffler.nextInt(numTracksWithMinNumPlays);
+            int skip = sShuffler.nextInt(numTracksWithMinNumPlays);
             for (int i = 0; i < trackNumPlays.length; i++) {
                 if (trackNumPlays[i] == minNumPlays) {
                     if (skip == 0) {
@@ -1047,7 +1047,7 @@ public class MusicService extends Service {
             int lookback = mHistory.size();
             int idx;
             while (true) {
-                idx = mShuffler.nextInt(mAutoShuffleList.length);
+                idx = sShuffler.nextInt(mAutoShuffleList.length);
                 if (!wasRecentlyUsed(idx, lookback)) {
                     break;
                 }
@@ -1931,7 +1931,7 @@ public class MusicService extends Service {
             if (position >= 0) {
                 mPlayPos = position;
             } else {
-                mPlayPos = mShuffler.nextInt(playlist.size());
+                mPlayPos = sShuffler.nextInt(playlist.size());
             }
             mHistory.clear();
             openCurrentAndNext();

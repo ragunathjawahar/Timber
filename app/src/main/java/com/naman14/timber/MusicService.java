@@ -168,7 +168,7 @@ public class MusicService extends Service {
             MediaStore.Audio.Media.MIME_TYPE, MediaStore.Audio.Media.ALBUM_ID,
             MediaStore.Audio.Media.ARTIST_ID
     };
-    private static LinkedList<Integer> mHistory = new LinkedList<>();
+    private static LinkedList<Integer> sHistory = new LinkedList<>();
     private final IBinder mBinder = new ServiceStub(this);
     private MultiPlayer mPlayer;
     private String mFileToPlay;
@@ -735,13 +735,13 @@ public class MusicService extends Service {
                 mPlayPos = -1;
                 mNextPlayPos = -1;
                 playlist.clear();
-                mHistory.clear();
+                sHistory.clear();
             } else {
                 for (int i = 0; i < numToRemove; i++) {
                     playlist.getTracks().remove(first);
                 }
 
-                ListIterator<Integer> positionIterator = mHistory.listIterator();
+                ListIterator<Integer> positionIterator = sHistory.listIterator();
                 while (positionIterator.hasNext()) {
                     int pos = positionIterator.next();
                     if (pos >= first && pos <= last) {
@@ -932,9 +932,9 @@ public class MusicService extends Service {
             }
 
 
-            final int numHistory = mHistory.size();
+            final int numHistory = sHistory.size();
             for (int i = 0; i < numHistory; i++) {
-                final int idx = mHistory.get(i);
+                final int idx = sHistory.get(i);
                 if (idx >= 0 && idx < numTracks) {
                     trackNumPlays[idx]++;
                 }
@@ -1044,7 +1044,7 @@ public class MusicService extends Service {
         }
         final int toAdd = 7 - (playlist.size() - (mPlayPos < 0 ? -1 : mPlayPos));
         for (int i = 0; i < toAdd; i++) {
-            int lookback = mHistory.size();
+            int lookback = sHistory.size();
             int idx;
             while (true) {
                 idx = sShuffler.nextInt(mAutoShuffleList.length);
@@ -1053,9 +1053,9 @@ public class MusicService extends Service {
                 }
                 lookback /= 2;
             }
-            mHistory.add(idx);
-            if (mHistory.size() > MAX_HISTORY_SIZE) {
-                mHistory.remove(0);
+            sHistory.add(idx);
+            if (sHistory.size() > MAX_HISTORY_SIZE) {
+                sHistory.remove(0);
             }
             MusicPlaybackTrack track = new MusicPlaybackTrack(mAutoShuffleList[idx], -1, IdType.NA, -1);
             playlist.getTracks().add(track);
@@ -1070,13 +1070,13 @@ public class MusicService extends Service {
         if (lookbacksize == 0) {
             return false;
         }
-        final int histsize = mHistory.size();
+        final int histsize = sHistory.size();
         if (histsize < lookbacksize) {
             lookbacksize = histsize;
         }
         final int maxidx = histsize - 1;
         for (int i = 0; i < lookbacksize; i++) {
-            final long entry = mHistory.get(maxidx - i);
+            final long entry = sHistory.get(maxidx - i);
             if (entry == idx) {
                 return true;
             }
@@ -1343,7 +1343,7 @@ public class MusicService extends Service {
         final SharedPreferences.Editor editor = mPreferences.edit();
         if (full) {
             mPlaybackStateStore.saveState(playlist.getTracks(),
-                    mShuffleMode != SHUFFLE_NONE ? mHistory : null);
+                    mShuffleMode != SHUFFLE_NONE ? sHistory : null);
             editor.putInt("cardid", mCardId);
         }
         editor.putInt("curpos", mPlayPos);
@@ -1415,7 +1415,7 @@ public class MusicService extends Service {
                 shufmode = SHUFFLE_NONE;
             }
             if (shufmode != SHUFFLE_NONE) {
-                mHistory = mPlaybackStateStore.getHistory(playlist.size());
+                sHistory = mPlaybackStateStore.getHistory(playlist.size());
             }
             if (shufmode == SHUFFLE_AUTO) {
                 if (!makeAutoShuffleList()) {
@@ -1479,7 +1479,7 @@ public class MusicService extends Service {
                         playlist.getTracks().add(track);
                         notifyChange(QUEUE_CHANGED);
                         mPlayPos = 0;
-                        mHistory.clear();
+                        sHistory.clear();
                     }
                 } catch (final UnsupportedOperationException ex) {
                     // Ignore
@@ -1654,14 +1654,14 @@ public class MusicService extends Service {
 
     public int getQueueHistorySize() {
         synchronized (this) {
-            return mHistory.size();
+            return sHistory.size();
         }
     }
 
     public int getQueueHistoryPosition(int position) {
         synchronized (this) {
-            if (position >= 0 && position < mHistory.size()) {
-                return mHistory.get(position);
+            if (position >= 0 && position < sHistory.size()) {
+                return sHistory.get(position);
             }
         }
 
@@ -1670,9 +1670,9 @@ public class MusicService extends Service {
 
     public int[] getQueueHistoryList() {
         synchronized (this) {
-            int[] history = new int[mHistory.size()];
-            for (int i = 0; i < mHistory.size(); i++) {
-                history[i] = mHistory.get(i);
+            int[] history = new int[sHistory.size()];
+            for (int i = 0; i < sHistory.size(); i++) {
+                history[i] = sHistory.get(i);
             }
 
             return history;
@@ -1933,7 +1933,7 @@ public class MusicService extends Service {
             } else {
                 mPlayPos = sShuffler.nextInt(playlist.size());
             }
-            mHistory.clear();
+            sHistory.clear();
             openCurrentAndNext();
             if (oldId != getAudioId()) {
                 notifyChange(META_CHANGED);
@@ -2067,9 +2067,9 @@ public class MusicService extends Service {
     public void setAndRecordPlayPos(int nextPos) {
         synchronized (this) {
             if (mShuffleMode != SHUFFLE_NONE) {
-                mHistory.add(mPlayPos);
-                if (mHistory.size() > MAX_HISTORY_SIZE) {
-                    mHistory.remove(0);
+                sHistory.add(mPlayPos);
+                if (sHistory.size() > MAX_HISTORY_SIZE) {
+                    sHistory.remove(0);
                 }
             }
 
@@ -2107,13 +2107,13 @@ public class MusicService extends Service {
         synchronized (this) {
             if (mShuffleMode == SHUFFLE_NORMAL) {
 
-                final int histsize = mHistory.size();
+                final int histsize = sHistory.size();
                 if (histsize == 0) {
                     return -1;
                 }
-                final Integer pos = mHistory.get(histsize - 1);
+                final Integer pos = sHistory.get(histsize - 1);
                 if (removeFromHistory) {
-                    mHistory.remove(histsize - 1);
+                    sHistory.remove(histsize - 1);
                 }
                 return pos;
             } else {

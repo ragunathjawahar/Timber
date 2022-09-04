@@ -170,14 +170,14 @@ public class MusicService extends Service {
     };
     private static LinkedList<Integer> sHistory = new LinkedList<>();
     private final IBinder mBinder = new ServiceStub(this);
-    private MultiPlayer mPlayer;
+    MultiPlayer mPlayer;
     private String mFileToPlay;
     WakeLock mWakeLock;
     private AlarmManager mAlarmManager;
     private PendingIntent mShutdownIntent;
     private boolean mShutdownScheduled;
     private NotificationManagerCompat mNotificationManager;
-    private Cursor mCursor;
+    Cursor mCursor;
     private Cursor mAlbumCursor;
     private AudioManager mAudioManager;
     private SharedPreferences mPreferences;
@@ -187,7 +187,7 @@ public class MusicService extends Service {
     private int mNotifyMode = NOTIFY_MODE_NONE;
     private long mNotificationPostTime = 0;
     private boolean mQueueIsSaveable = true;
-    private boolean mPausedByTransientLossOfFocus = false;
+    boolean mPausedByTransientLossOfFocus = false;
 
     private MediaSessionCompat mSession;
     private RemoteControlClient mRemoteControlClient;
@@ -196,9 +196,9 @@ public class MusicService extends Service {
 
     private int mCardId;
 
-    private int mPlayPos = -1;
+    int mPlayPos = -1;
 
-    private int mNextPlayPos = -1;
+    int mNextPlayPos = -1;
 
     private int mOpenFailedCounter = 0;
 
@@ -206,11 +206,11 @@ public class MusicService extends Service {
 
     private int mShuffleMode = SHUFFLE_NONE;
 
-    private int mRepeatMode = REPEAT_NONE;
+    int mRepeatMode = REPEAT_NONE;
 
     private int mServiceStartId = -1;
 
-    private final Playlist playlist = new Playlist();
+    final Playlist playlist = new Playlist();
 
     private long[] mAutoShuffleList = null;
 

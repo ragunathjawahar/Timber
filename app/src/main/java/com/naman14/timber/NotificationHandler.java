@@ -31,7 +31,7 @@ import de.Maxr1998.trackselectorlib.TrackItem;
 class NotificationHandler {
     private int mNotifyMode = NOTIFY_MODE_NONE;
     private long mNotificationPostTime = 0;
-    private NotificationManagerCompat mNotificationManager;
+    private final NotificationManagerCompat mNotificationManager;
     private static final int NOTIFY_MODE_NONE = 0;
     private static final int NOTIFY_MODE_FOREGROUND = 1;
     private static final int NOTIFY_MODE_BACKGROUND = 2;

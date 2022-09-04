@@ -2568,35 +2568,4 @@ public class MusicService extends Service {
         }
     }
 
-    static class Playlist {
-        private ArrayList<MusicPlaybackTrack> tracks = new ArrayList<>(100);
-
-        public ArrayList<MusicPlaybackTrack> getTracks() {
-            return tracks;
-        }
-
-        public void setTracks(ArrayList<MusicPlaybackTrack> tracks) {
-            this.tracks = tracks;
-        }
-
-        public boolean isEmpty() {
-            return tracks == null || tracks.size() == 0;
-        }
-
-        public boolean isNotEmpty() {
-            return tracks != null && tracks.size() > 0;
-        }
-
-        public void clear() {
-            tracks.clear();
-        }
-
-        public int size() {
-            return tracks.size();
-        }
-
-        public long getTrackId(int index) {
-            return tracks.get(index).mId;
-        }
-    }
 }

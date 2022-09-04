@@ -579,7 +579,7 @@ public class MusicService extends Service {
 
     }
 
-    private void updateNotification() {
+    void updateNotification() {
         final int newNotifyMode;
         if (isPlaying()) {
             newNotifyMode = NOTIFY_MODE_FOREGROUND;
@@ -800,7 +800,7 @@ public class MusicService extends Service {
         }
     }
 
-    private void updateCursor(final long trackId) {
+    void updateCursor(final long trackId) {
         updateCursor("_id=" + trackId, null);
     }
 
@@ -856,7 +856,7 @@ public class MusicService extends Service {
         }
     }
 
-    private void openCurrentAndNext() {
+    void openCurrentAndNext() {
         openCurrentAndMaybeNext(true);
     }
 
@@ -910,7 +910,7 @@ public class MusicService extends Service {
         }
     }
 
-    private void sendErrorMessage(final String trackName) {
+    void sendErrorMessage(final String trackName) {
         final Intent i = new Intent(TRACK_ERROR);
         i.putExtra(TrackErrorExtra.TRACK_NAME, trackName);
         sendBroadcast(i);
@@ -993,7 +993,7 @@ public class MusicService extends Service {
         }
     }
 
-    private void setNextTrack() {
+    void setNextTrack() {
         setNextTrack(getNextPosition(false));
     }
 
@@ -1084,7 +1084,7 @@ public class MusicService extends Service {
         return false;
     }
 
-    private void notifyChange(final String what) {
+    void notifyChange(final String what) {
         if (D) Log.d(TAG, "notifyChange: what = " + what);
 
         // Update the lockscreen controls

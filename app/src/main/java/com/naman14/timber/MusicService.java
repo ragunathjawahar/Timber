@@ -19,9 +19,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.AlarmManager;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -35,7 +32,6 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.MediaMetadataEditor;
@@ -53,13 +49,9 @@ import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Audio.AlbumColumns;
 import android.provider.MediaStore.Audio.AudioColumns;
-import androidx.core.app.NotificationManagerCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
-
-import androidx.media.app.NotificationCompat;
-import androidx.palette.graphics.Palette;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -72,7 +64,6 @@ import com.naman14.timber.permissions.Nammu;
 import com.naman14.timber.provider.MusicPlaybackState;
 import com.naman14.timber.provider.RecentStore;
 import com.naman14.timber.provider.SongPlayCount;
-import com.naman14.timber.utils.NavigationUtils;
 import com.naman14.timber.utils.PreferencesUtility;
 import com.naman14.timber.utils.TimberUtils;
 import com.naman14.timber.utils.TimberUtils.IdType;
@@ -82,9 +73,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
-import de.Maxr1998.trackselectorlib.ModNotInstalledException;
 import de.Maxr1998.trackselectorlib.NotificationHelper;
-import de.Maxr1998.trackselectorlib.TrackItem;
 
 @SuppressLint("NewApi")
 public class MusicService extends Service {
@@ -117,7 +106,6 @@ public class MusicService extends Service {
     public static final String CMDPREVIOUS = "previous";
     public static final String CMDNEXT = "next";
     public static final String UPDATE_PREFERENCES = "updatepreferences";
-    public static final String CHANNEL_ID = "timber_channel_01";
     public static final int NEXT = 2;
     public static final int LAST = 3;
     public static final int SHUFFLE_NONE = 0;
@@ -138,7 +126,7 @@ public class MusicService extends Service {
     static final int FOCUSCHANGE = 5;
     static final int FADEDOWN = 6;
     static final int FADEUP = 7;
-    private static final int IDLE_DELAY = 5 * 60 * 1000;
+    static final int IDLE_DELAY = 5 * 60 * 1000;
     private static final long REWIND_INSTEAD_PREVIOUS_THRESHOLD = 3000;
     private static final String[] PROJECTION = new String[]{
             "audio._id AS _id", MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM,
@@ -150,14 +138,7 @@ public class MusicService extends Service {
             MediaStore.Audio.Albums.ALBUM, MediaStore.Audio.Albums.ARTIST,
             MediaStore.Audio.Albums.LAST_YEAR
     };
-    private static final String[] NOTIFICATION_PROJECTION = new String[]{
-            "audio._id AS _id", AudioColumns.ALBUM_ID, AudioColumns.TITLE,
-            AudioColumns.ARTIST, AudioColumns.DURATION
-    };
     private static final Shuffler sShuffler = new Shuffler();
-    private static final int NOTIFY_MODE_NONE = 0;
-    private static final int NOTIFY_MODE_FOREGROUND = 1;
-    private static final int NOTIFY_MODE_BACKGROUND = 2;
     private static final String[] PROJECTION_MATRIX = new String[]{
             "_id", MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.DATA,
@@ -172,7 +153,6 @@ public class MusicService extends Service {
     private AlarmManager mAlarmManager;
     private PendingIntent mShutdownIntent;
     private boolean mShutdownScheduled;
-    private NotificationManagerCompat mNotificationManager;
     Cursor mCursor;
     private Cursor mAlbumCursor;
     private AudioManager mAudioManager;
@@ -180,8 +160,6 @@ public class MusicService extends Service {
     private boolean mServiceInUse = false;
     private boolean mIsSupposedToBePlaying = false;
     private long mLastPlayedTime;
-    private int mNotifyMode = NOTIFY_MODE_NONE;
-    private long mNotificationPostTime = 0;
     private boolean mQueueIsSaveable = true;
     boolean mPausedByTransientLossOfFocus = false;
 
@@ -211,6 +189,7 @@ public class MusicService extends Service {
     private long[] mAutoShuffleList = null;
 
     private MusicPlayerHandler mPlayerHandler;
+
     private final OnAudioFocusChangeListener mAudioFocusListener = new OnAudioFocusChangeListener() {
 
         @Override
@@ -234,7 +213,6 @@ public class MusicService extends Service {
         }
     };
     private ContentObserver mMediaStoreObserver;
-
     @Override
     public IBinder onBind(final Intent intent) {
         if (D) Log.d(TAG, "Service bound, intent = " + intent);
@@ -266,13 +244,15 @@ public class MusicService extends Service {
         mServiceInUse = true;
     }
 
+    private NotificationHandler mNotificationHandler;
+
     @Override
     public void onCreate() {
         if (D) Log.d(TAG, "Creating service");
         super.onCreate();
+        mNotificationHandler = new NotificationHandler(this);
 
-        mNotificationManager = NotificationManagerCompat.from(this);
-        createNotificationChannel();
+        mNotificationHandler.createNotificationChannel();
 
         // gets a pointer to the playback state store
         mPlaybackStateStore = MusicPlaybackState.getInstance(this);
@@ -503,7 +483,7 @@ public class MusicService extends Service {
         }
 
         if (D) Log.d(TAG, "Nothing is playing anymore, releasing notification");
-        cancelNotification();
+        mNotificationHandler.cancelNotification();
         mAudioManager.abandonAudioFocus(mAudioFocusListener);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
             mSession.setActive(false);
@@ -573,45 +553,6 @@ public class MusicService extends Service {
         }
         notifyChange(META_CHANGED);
 
-    }
-
-    void updateNotification() {
-        final int newNotifyMode;
-        if (isPlaying()) {
-            newNotifyMode = NOTIFY_MODE_FOREGROUND;
-        } else if (recentlyPlayed()) {
-            newNotifyMode = NOTIFY_MODE_BACKGROUND;
-        } else {
-            newNotifyMode = NOTIFY_MODE_NONE;
-        }
-
-        int notificationId = hashCode();
-        if (mNotifyMode != newNotifyMode) {
-            if (mNotifyMode == NOTIFY_MODE_FOREGROUND) {
-                if (TimberUtils.isLollipop())
-                    stopForeground(newNotifyMode == NOTIFY_MODE_NONE);
-                else
-                    stopForeground(newNotifyMode == NOTIFY_MODE_NONE || newNotifyMode == NOTIFY_MODE_BACKGROUND);
-            } else if (newNotifyMode == NOTIFY_MODE_NONE) {
-                mNotificationManager.cancel(notificationId);
-                mNotificationPostTime = 0;
-            }
-        }
-
-        if (newNotifyMode == NOTIFY_MODE_FOREGROUND) {
-            startForeground(notificationId, buildNotification());
-        } else if (newNotifyMode == NOTIFY_MODE_BACKGROUND) {
-            mNotificationManager.notify(notificationId, buildNotification());
-        }
-
-        mNotifyMode = newNotifyMode;
-    }
-
-    private void cancelNotification() {
-        stopForeground(true);
-        mNotificationManager.cancel(hashCode());
-        mNotificationPostTime = 0;
-        mNotifyMode = NOTIFY_MODE_NONE;
     }
 
     private int getCardId() {
@@ -1128,9 +1069,8 @@ public class MusicService extends Service {
         }
 
         if (what.equals(PLAYSTATE_CHANGED)) {
-            updateNotification();
+            mNotificationHandler.updateNotification();
         }
-
     }
 
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
@@ -1213,122 +1153,6 @@ public class MusicService extends Service {
                         .build());
             }
         }
-    }
-
-    private void createNotificationChannel() {
-        if (TimberUtils.isOreo()) {
-            CharSequence name = "Timber";
-            int importance = NotificationManager.IMPORTANCE_LOW;
-            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
-            manager.createNotificationChannel(mChannel);
-        }
-    }
-
-    private Notification buildNotification() {
-        final String albumName = getAlbumName();
-        final String artistName = getArtistName();
-        final boolean isPlaying = isPlaying();
-        String text = TextUtils.isEmpty(albumName)
-                ? artistName : artistName + " - " + albumName;
-
-        int playButtonResId = isPlaying
-                ? R.drawable.ic_pause_white_36dp : R.drawable.ic_play_white_36dp;
-
-        Intent nowPlayingIntent = NavigationUtils.getNowPlayingIntent(this);
-        PendingIntent clickIntent = PendingIntent.getActivity(this, 0, nowPlayingIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        Bitmap artwork;
-        artwork = ImageLoader.getInstance().loadImageSync(TimberUtils.getAlbumArtUri(getAlbumId()).toString());
-
-        if (artwork == null) {
-            artwork = ImageLoader.getInstance().loadImageSync("drawable://" + R.drawable.ic_empty_music2);
-        }
-
-        if (mNotificationPostTime == 0) {
-            mNotificationPostTime = System.currentTimeMillis();
-        }
-
-        androidx.core.app.NotificationCompat.Builder builder = new androidx.core.app.NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification)
-                .setLargeIcon(artwork)
-                .setContentIntent(clickIntent)
-                .setContentTitle(getTrackName())
-                .setContentText(text)
-                .setWhen(mNotificationPostTime)
-                .addAction(R.drawable.ic_skip_previous_white_36dp,
-                        "",
-                        retrievePlaybackAction(PREVIOUS_ACTION))
-                .addAction(playButtonResId, "",
-                        retrievePlaybackAction(TOGGLEPAUSE_ACTION))
-                .addAction(R.drawable.ic_skip_next_white_36dp,
-                        "",
-                        retrievePlaybackAction(NEXT_ACTION));
-
-        if (TimberUtils.isJellyBeanMR1()) {
-            builder.setShowWhen(false);
-        }
-
-        if (TimberUtils.isLollipop()) {
-            builder.setVisibility(Notification.VISIBILITY_PUBLIC);
-            NotificationCompat.MediaStyle style = new NotificationCompat.MediaStyle()
-                    .setMediaSession(mSession.getSessionToken())
-                    .setShowActionsInCompactView(0, 1, 2, 3);
-            builder.setStyle(style);
-        }
-        if (artwork != null && TimberUtils.isLollipop()) {
-            builder.setColor(Palette.from(artwork).generate().getVibrantColor(Color.parseColor("#403f4d")));
-        }
-
-        if (TimberUtils.isOreo()) {
-            builder.setColorized(true);
-        }
-
-        Notification n = builder.build();
-
-        if (mActivateXTrackSelector) {
-            addXTrackSelector(n);
-        }
-
-        return n;
-    }
-
-    private void addXTrackSelector(Notification n) {
-        if (NotificationHelper.isSupported(n)) {
-            StringBuilder selection = new StringBuilder();
-            StringBuilder order = new StringBuilder().append("CASE _id \n");
-            for (int i = 0; i < playlist.size(); i++) {
-                selection.append("_id=").append(playlist.getTrackId(i)).append(" OR ");
-                order.append("WHEN ").append(playlist.getTrackId(i)).append(" THEN ").append(i).append("\n");
-            }
-            order.append("END");
-            Cursor c = getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, NOTIFICATION_PROJECTION, selection.substring(0, selection.length() - 3), null, order.toString());
-            if (c != null && c.getCount() != 0) {
-                c.moveToFirst();
-                ArrayList<Bundle> list = new ArrayList<>();
-                do {
-                    TrackItem t = new TrackItem()
-                            .setArt(TimberUtils.getAlbumArtUri(c.getLong(c.getColumnIndexOrThrow(AudioColumns.ALBUM_ID))))
-                            .setTitle(c.getString(c.getColumnIndexOrThrow(AudioColumns.TITLE)))
-                            .setArtist(c.getString(c.getColumnIndexOrThrow(AudioColumns.ARTIST)))
-                            .setDuration(TimberUtils.makeShortTimeString(this, c.getInt(c.getColumnIndexOrThrow(AudioColumns.DURATION)) / 1000));
-                    list.add(t.get());
-                } while (c.moveToNext());
-                try {
-                    NotificationHelper.insertToNotification(n, list, this, getQueuePosition());
-                } catch (ModNotInstalledException e) {
-                    e.printStackTrace();
-                }
-                c.close();
-            }
-        }
-    }
-
-    private PendingIntent retrievePlaybackAction(final String action) {
-        final ComponentName serviceName = new ComponentName(this, MusicService.class);
-        Intent intent = new Intent(action);
-        intent.setComponent(serviceName);
-
-        return PendingIntent.getService(this, 0, intent, 0);
     }
 
     private void saveQueue(final boolean full) {
@@ -1899,10 +1723,6 @@ public class MusicService extends Service {
         }
     }
 
-    private boolean recentlyPlayed() {
-        return isPlaying() || System.currentTimeMillis() - mLastPlayedTime < IDLE_DELAY;
-    }
-
     public void open(final long[] list, final int position, long sourceId, TimberUtils.IdType sourceType) {
         synchronized (this) {
             if (mShuffleMode == SHUFFLE_AUTO) {
@@ -1985,7 +1805,7 @@ public class MusicService extends Service {
             setIsSupposedToBePlaying(true, true);
 
             cancelShutdown();
-            updateNotification();
+            mNotificationHandler.updateNotification();
             notifyChange(META_CHANGED);
         } else if (playlist.size() <= 0) {
             setShuffleMode(SHUFFLE_AUTO);
@@ -2164,11 +1984,10 @@ public class MusicService extends Service {
             if (action == NEXT && mPlayPos + 1 < playlist.size()) {
                 addToPlayList(list, mPlayPos + 1, sourceId, sourceType);
                 mNextPlayPos = mPlayPos + 1;
-                notifyChange(QUEUE_CHANGED);
             } else {
                 addToPlayList(list, Integer.MAX_VALUE, sourceId, sourceType);
-                notifyChange(QUEUE_CHANGED);
             }
+            notifyChange(QUEUE_CHANGED);
 
             if (mPlayPos < 0) {
                 mPlayPos = 0;
@@ -2193,9 +2012,6 @@ public class MusicService extends Service {
     private void cycleShuffle() {
         if (mShuffleMode == SHUFFLE_NONE) {
             setShuffleMode(SHUFFLE_NORMAL);
-//            if (mRepeatMode == REPEAT_CURRENT) {
-//                setRepeatMode(REPEAT_ALL);
-//            }
         } else if (mShuffleMode == SHUFFLE_NORMAL || mShuffleMode == SHUFFLE_AUTO) {
             setShuffleMode(SHUFFLE_NONE);
         }
@@ -2207,5 +2023,21 @@ public class MusicService extends Service {
 
     public void playlistChanged() {
         notifyChange(PLAYLIST_CHANGED);
+    }
+
+    public long getLastPlayedTime() {
+        return mLastPlayedTime;
+    }
+
+    MediaSessionCompat getSession() {
+        return mSession;
+    }
+
+    public boolean isActivateXTrackSelector() {
+        return mActivateXTrackSelector;
+    }
+
+    public void updateNotification() {
+        mNotificationHandler.updateNotification();
     }
 }
